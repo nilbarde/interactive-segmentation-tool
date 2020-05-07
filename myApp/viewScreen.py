@@ -40,20 +40,6 @@ class viewScreen:
 			self.sliders[slider]["slider"].bind(value=partial(self.sliders[slider]["fun"]))
 			grid.add_widget(self.sliders[slider]["slider"])
 
-		# stages
-		self.stagesScroll, self.stagesRoll = self.getRoll(size_hint=self.stagesGridDim,pos_hint=self.stagesGridPos,grid=self,direction="ver")
-		print("stages")
-		for stage in self.stages:
-			grid = GridLayout(cols=2,size_hint=(1.0,None),spacing=2,padding=15)
-			grid.bind(minimum_height=grid.setter('height'))
-			self.stagesRoll.add_widget(grid)
-
-			self.stages[stage]["check"] = CheckBox(size_hint=(0.2,None), height=60,group="stages")
-			self.stages[stage]["check"].bind(active=self.stages[stage]["fun"])
-			grid.add_widget(self.stages[stage]["check"])
-			self.stages[stage]["btn"] = Button(text=self.stages[stage]["task"],font_size=30, size_hint = (0.8,None), height=60, on_press=partial(self.stages[stage]["fun"],None,True))
-			grid.add_widget(self.stages[stage]["btn"])
-
 	def setImageScroll(self,*args):
 		grid = FloatLayout(size_hint=self.imgDim, pos_hint=self.imgPos)
 		self.add_widget(grid)

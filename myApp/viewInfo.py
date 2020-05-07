@@ -72,28 +72,9 @@ class viewInfo:
 		self.btns[x]["dim"] = (0.11,0.08)
 		self.btns[x]["fun"] = self.imageReset
 
-		self.stages = {}
-		self.stagesGridPos = {"center_x":0.78,"center_y":0.55}
-		self.stagesGridDim = (0.36,0.35)
-		self.stageNow = 0
-
-		x = 1
-		self.stages[x] = {}
-		self.stages[x]["task"] = "add/remove nuclei"
-		self.stages[x]["fun"] = partial(self.stageSwitch,x)
-		self.stages[x][True] = partial(self.nucleiAdd)
-		self.stages[x][False] = partial(self.nucleiRemove)
-
-		x = 2
-		self.stages[x] = {}
-		self.stages[x]["task"] = "improve detected"
-		self.stages[x]["fun"] = partial(self.stageSwitch,x)
-		self.stages[x][True] = partial(self.nucleiPartAdd)
-		self.stages[x][False] = partial(self.nucleiPartRemove)
-
 		self.sliders = {}
-		self.sliderGridPos = {"center_x":0.78,"center_y":0.2}
-		self.sliderGridDim = (0.36,0.35)
+		self.sliderGridPos = {"center_x":0.78,"center_y":0.25}
+		self.sliderGridDim = (0.36,0.45)
 
 		x = "zoom percent"
 		self.sliders[x] = {}

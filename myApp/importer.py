@@ -31,9 +31,12 @@ if True:
 	from kivy.uix.slider import Slider
 	from kivy.uix.popup import Popup
 	from kivy.config import Config
+	from kivy.cache import Cache
 	Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
-
+	
 	from functools import partial
+	import cv2
+	import numpy as np
 else:
 	print("*******************************")
 	print("  error in importing packages  ")

@@ -1,5 +1,6 @@
 from os import walk
 from .importer import *
+from torchvision import transforms
 
 class toolFunctions():
 	def __init__(self):
@@ -13,6 +14,15 @@ class toolFunctions():
 		self.imageNow = image_num
 		name = self.images[image_num]
 
+		input_transform = transforms.Compose([
+			transforms.ToTensor(),
+			transforms.Normalize([.485, .456, .406], [.229, .224, .225])
+		])
+
+		self.image = cv2.cvtColor(cv2.imread(name), cv2.COLOR_BGR2RGB)
+		self.image_nd = input_transform(self.image).to(self.device)
+		self.predictor.set_input_image(self.image_nd)
+
 		self.imgRoll.clear_widgets()
 		self.imgGrid = FloatLayout(size_hint=(None,None),width=self.imgWidth,height=self.imgHeight)
 		self.imgRoll.add_widget(self.imgGrid)
@@ -21,15 +31,16 @@ class toolFunctions():
 		print(name)
 		with self.imgGrid.canvas:
 			self.img = Rectangle(source=name)
+			# Color(0,0,0,0)
+			self.mask = Rectangle(source="res.png")
 			self.imgWidth, self.imgHeight = (self.img.texture.size)
 			self.imgGrid.width = self.imgWidth
 			self.imgGrid.height = self.imgHeight
 		self.zoomNow = 1
 		self.clicks = []
-		self.stageSwitch(1)
+		self.probs_history = []
 		self.imgGrid.bind(pos=partial(self._image_bind,self.imgGrid,self.img),size=partial(self._image_bind,self.imgGrid,self.img))
-
-		self.nucleiFromScratch()
+		self.imgGrid.bind(pos=partial(self._image_bind,self.imgGrid,self.mask),size=partial(self._image_bind,self.imgGrid,self.mask))
 
 	def imageNext(self,*args):
 		self.imageLoad(self.imageNow+1)
@@ -38,7 +49,9 @@ class toolFunctions():
 		self.imageLoad(self.imageNow-1)
 
 	def imageUndo(self,*args):
+		self.undo_click()
 		print("undo")
+		self.image_saver()
 
 	def imageReset(self,*args):
 		self.imageLoad(self.imageNow)
@@ -55,13 +68,6 @@ class toolFunctions():
 			self.zoomNow /= (100+x/5)/100.0
 		self.imgGrid.width = self.imgWidth*self.zoomNow
 		self.imgGrid.height = self.imgHeight*self.zoomNow
-
-	def stageSwitch(self,stage,instance=None,value=True,*args):
-		if value:
-			self.stageNow = stage
-			if not self.stages[stage]["check"].active:
-				print("make active",stage)
-				self.stages[stage]["check"].active = True
 
 	def updateSlider(self, slider, instance, value, *args):
 		# print(self.sliders)
@@ -99,13 +105,10 @@ class toolFunctions():
 		elif touch.button == "scrolldown":
 			self.zoomDir("--")
 
-	def addPoint(self,x,y,is_positive):
+	def addPoint(self,x,y,is_positive,*args):
 		if not (x/self.zoomNow < self.imgWidth and y/self.zoomNow < self.imgHeight):
 			print("outside")
 			return
-
-		self.stages[self.stageNow][is_positive](round(x/self.zoomNow),round(y/self.zoomNow))
-
 		cen_x = x/self.imgGrid.width
 		cen_y = 1 - (y/self.imgGrid.height)
 		w = self.sliders["click radius"]["val"]
@@ -117,9 +120,10 @@ class toolFunctions():
 				Color(0,1,0,self.sliders["overlay alpha"]["val"])
 			else:
 				Color(1,0,0,self.sliders["overlay alpha"]["val"])
+			print(self.imgGrid.height,self.imgGrid.width,"this is me")
 			cir = Ellipse()
 		self.clicks[-1].bind(pos=partial(self._image_bind,self.clicks[-1],cir),size=partial(self._image_bind,self.clicks[-1],cir))
-
+		self.add_click(int(round(x)),int(round(y)),is_positive) # function in myModel
 
 
 
