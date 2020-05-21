@@ -15,6 +15,7 @@ from functools import partial
 
 class myModel():
 	def __init__(self):
+		self.image_nd = None
 		print("init myModel")
 
 	def makeModel(self,*args):
@@ -25,12 +26,41 @@ class myModel():
 
 		self.predictor_params = {'brs_mode': 'NoBRS'}
 		self.net = self.model.to(self.device)
+		self.reset_predictor()
 
+	def reset_predictor(self,*args):
 		self.predictor = get_predictor(self.net, device=self.device,
 									   **self.predictor_params)
+		if self.image_nd is not None:
+			self.predictor.set_input_image(self.image_nd)
 
 		self.clicker = clicker.Clicker()
+		self.probs_history = []
 		self.states = []
+
+	def nucleiFinish(self,*args):
+		self.object_count += 1
+
+		pred = self.probs_history[-1][1]>self.sliders["prediction threshold"]["val"]
+		print(self.all_results.shape,pred.shape)
+		self.all_results[pred] = self.object_count
+		self.reset_predictor()
+
+	def nucleiAdd(self,x,y,*args):
+		self.nucleiFinish()
+		self.add_click(x,y,True)
+		print("nucleiAdd")
+
+	def nucleiRemove(self,x,y,*args):
+		print("nucleiRemove")
+
+	def nucleiPartAdd(self,x,y,*args):
+		print("nucleiPartAdd")
+		self.add_click(x,y,True)
+
+	def nucleiPartRemove(self,x,y,*args):
+		print("nucleiPartRemove")
+		self.add_click(x,y,False)
 
 	def add_click(self, x, y, is_positive):
 		print(x,y,is_positive)
@@ -49,13 +79,35 @@ class myModel():
 			self.probs_history.append((np.zeros_like(pred), pred))
 		self.image_saver()
 
+	def undo_click(self):
+		if not self.states:
+			return
+
+		self.imgGrid.remove_widget(self.clicks[-1])
+		self.clicks.pop()
+		prev_state = self.states.pop()
+		self.clicker.set_state(prev_state['clicker'])
+		self.predictor.set_states(prev_state['predictor'])
+		print(len(self.probs_history),"length")
+		self.probs_history.pop()
+		self.image_saver()
+
 	def image_saver(self,*args):
+		if not self.probs_history:
+			self.imgGrid.canvas.remove(self.mask)
+			with self.imgGrid.canvas:
+				Color(0,0,0,0)
+				self.mask = Rectangle(size=self.imgGrid.size)
+			self.imgGrid.bind(pos=partial(self._image_bind,self.imgGrid,self.mask),size=partial(self._image_bind,self.imgGrid,self.mask))
+			return
+		print(len(self.probs_history),"length")
+		print(len(self.probs_history[-1]))
 		pred = self.probs_history[-1][1]
 		print((pred.shape),np.sum(pred),pred.dtype)
 		print("xoxo")
 
 		res = np.zeros((pred.shape[0],pred.shape[1],4),dtype="uint8")
-		res[:,:,1] = (pred > 0.5)*255
+		res[:,:,2] = (pred > 0.5)*255
 		res[:,:,3] = (pred > 0.5)*128
 
 		source = "res.png"
@@ -71,14 +123,13 @@ class myModel():
 		Cache.remove('kv.Rectangle')
 		self.imgGrid.canvas.remove(self.mask)
 		with self.imgGrid.canvas:
+			Color(2.55,0,0,1)
 			self.mask = Rectangle(source=source,size=self.imgGrid.size)
-		print(self.mask.texture.size,self.imgGrid.width,self.imgGrid.height)
 		self.imgGrid.bind(pos=partial(self._image_bind,self.imgGrid,self.mask),size=partial(self._image_bind,self.imgGrid,self.mask))
-		self.imgGrid.width = self.imgWidth*self.zoomNow
-		self.imgGrid.height = self.imgHeight*self.zoomNow
 		print("success",self.mask.texture.size)
 
 	def loadModel(self,path,device,norm_radius,*args):
+		print(path,device)
 		return utils.load_is_model(path, device, cpu_dist_maps=True, norm_radius=norm_radius)
 
 

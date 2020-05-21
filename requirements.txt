@@ -1,19 +1,118 @@
-scipy
-numpy
-Cython
-scikit-image
-opencv-python-headless
-Pillow
-matplotlib
-imgaug
-albumentations
-graphviz
-tqdm
-pyyaml
-easydict
-torch>=1.4.0
-torchvision>=0.5.0
-tensorboard
-future
-cffi
-ninja
+scipy==1.4.1
+Cython==0.29.17
+numpy==1.18.3
+opencv_python==4.2.0.34
+torch==1.5.0
+Kivy==1.11.1
+torchvision==0.6.0
+tqdm==4.45.0
+easydict==1.9
+albumentations==0.4.5
+mxnet==1.6.0
+Pillow==7.1.2
+PyYAML==5.3.1
+
+23.33 aliss  850  875
+23.35 kane   450  500
+23.36 gea    920  950
+23.43 gea    900  950
+00.08 ramos  800
+01.00 modr   850
+01.53 modr   850
+01.12 ramos  800
+01.52 grie   800  900
+02.15 chie   400
+
+
+ 3   170
+ 5   200  370
+ 7   300  670
+ 9   400 1070
+ 11  400 1470
+ 13  600 2070  97
+ 15  700 2770  98
+ 17  800 3570  99
+ 19 1000 4570 100
+ 21 1200 5770 101
+ 23 1200 6970 102
+
+4570 + 8000 + 2900 = 15470
+
+ 18950
+ 16060
+
+  3890
+
+pique 2770 + 3600 =  6370
+busq  4570 + 8000 = 12570
+case  5770 + 9750 = 15520
+court 6970 +12000 = 18970
+
+18970
+16060
+ 2910
+
+18970
+ 9750
+28720
+16060
+12660
+
+ 8700
+ 4500
+ 4200
+
+15.44 salah  750  925
+16.02 gea    750  800
+16.12 salah  800  925
+
+23.43 pique  325  450
+00.13 pique  325  450
+00.28 bru   1150 1200    
+01.10 oblak  600  675
+
+17.03 gea    600  670
+17.40 modr   700  720
+17.40 modr   700  720
+
+20.30 pogba  570  670
+20.41 pogba  650  695
+20.55 grie   500  575
+21.04 auba   210  250
+21.12 grie   515  575
+
+
+00.11 aliss  610  650
+00.22 pogba  595  690
+00.25 aliss  610  675
+00.30 mba    680  785
+01.15 pogba  625  690
+01.55 aliss  635  675
+02.00 pogba  550  690
+02.10 agu    465  520
+02.40 aliss  570  675
+02.40 aliss  615  650
+
+
+11.22 ramos  500  600
+11.32 modr   665  725
+12.18 gea    600  650
+
+15.32 MODRI  700  725
+15.35 ramos  600  650
+15.35 dyb    345  390
+15.38 dyb    300  390
+15.57 agu    485  525
+16.03 modri  640  700
+16.12 agu    465  525
+16.17 pogba  528  640
+
+00.21 POGBA  525  660
+
+18.59 KROOS  360  400
+
+
+01.03 pogba  550  580
+01.06 pogba  550  580
+02.29 pogba  525  580
+

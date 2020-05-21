@@ -6,7 +6,7 @@ class toolFunctions():
 	def __init__(self):
 		print("init toolFunctions")
 
-	def imageLoad(self,image_num,*args):
+	def imageLoad(self,image_num=0,*args):
 		print(image_num)
 		if image_num >= len(self.images) or image_num < 0:
 			return
@@ -31,16 +31,18 @@ class toolFunctions():
 		print(name)
 		with self.imgGrid.canvas:
 			self.img = Rectangle(source=name)
-			# Color(0,0,0,0)
-			self.mask = Rectangle(source="res.png")
 			self.imgWidth, self.imgHeight = (self.img.texture.size)
 			self.imgGrid.width = self.imgWidth
 			self.imgGrid.height = self.imgHeight
+			Color(0,0,0,0)
+			self.mask = Rectangle()
 		self.zoomNow = 1
 		self.clicks = []
 		self.probs_history = []
+		self.all_results = np.zeros((self.imgHeight, self.imgWidth),dtype="uint8")
+		self.object_count = 0
 		self.imgGrid.bind(pos=partial(self._image_bind,self.imgGrid,self.img),size=partial(self._image_bind,self.imgGrid,self.img))
-		self.imgGrid.bind(pos=partial(self._image_bind,self.imgGrid,self.mask),size=partial(self._image_bind,self.imgGrid,self.mask))
+		# self.imgGrid.bind(pos=partial(self._image_bind,self.imgGrid,self.mask),size=partial(self._image_bind,self.imgGrid,self.mask))
 
 	def imageNext(self,*args):
 		self.imageLoad(self.imageNow+1)
@@ -56,18 +58,57 @@ class toolFunctions():
 	def imageReset(self,*args):
 		self.imageLoad(self.imageNow)
 
-	def zoomDir(self,mode,*args):
-		x = self.sliders["zoom percent"]["val"]
+	def modelLoad(self,*args):
+		self.weightsPath = self.inputs["model-weights path"]["input"].text
+		self.makeModel()
+		self.imageLoad()
+
+	# def nextObject(self,*args):
+
+	def zoomDir(self,mode,x=None,y=None,*args):
+		zoom = self.sliders["zoom percent"]["val"]
 		if mode == "+":
-			self.zoomNow *= (100+x)/100.0
+			self.zoomNow *= (100+zoom)/100.0
 		elif mode == "-":
-			self.zoomNow /= (100+x)/100.0
+			self.zoomNow /= (100+zoom)/100.0
 		elif mode == "++":
-			self.zoomNow *= (100+x/5)/100.0
+			self.zoomNow *= (100+zoom/5)/100.0
 		elif mode == "--":
-			self.zoomNow /= (100+x/5)/100.0
-		self.imgGrid.width = self.imgWidth*self.zoomNow
-		self.imgGrid.height = self.imgHeight*self.zoomNow
+			self.zoomNow /= (100+zoom/5)/100.0
+
+		point = (self.imgScroll.scroll_x*(self.imgRoll.width-self.imgScroll.width)+x*self.imgScroll.width)/(self.imgRoll.width)
+		print("------")
+		print(point)
+
+		newWidth = self.imgWidth*self.zoomNow
+		newHeight = self.imgHeight*self.zoomNow
+		if not x is None and newWidth>self.imgRoll.width:
+			shift_x = x*self.imgScroll.width
+			x = ((self.imgRoll.width-self.imgScroll.width)*self.imgScroll.scroll_x + shift_x)*1.0
+			x *= newWidth/self.imgGrid.width
+			x -= shift_x
+			x /= (newWidth-self.imgScroll.width)
+			self.imgScroll.scroll_x = x
+		# if not y is None and newHeight>self.imgRoll.height:
+		# 	shift_y = y*self.imgScroll.height
+		# 	y = ((self.imgRoll.height-self.imgScroll.width)*(1-self.imgScroll.scroll_y) + shift_y)*1.0
+		# 	y *= newHeight/self.imgGrid.height
+		# 	y -= shift_y
+		# 	y /= (newWidth-self.imgScroll.width)
+		# 	self.imgScroll.scroll_y = 1 - y
+		self.imgGrid.width = newWidth
+		self.imgGrid.height = newHeight
+
+		point = (self.imgScroll.scroll_x*(self.imgRoll.width-self.imgScroll.width)+x*self.imgScroll.width)/(self.imgRoll.width)
+		print(point)
+		print("------")
+
+	def stageSwitch(self,stage,instance=None,value=True,*args):
+		if value:
+			self.stageNow = stage
+			if not self.stages[stage]["check"].active:
+				print("make active",stage)
+				self.stages[stage]["check"].active = True
 
 	def updateSlider(self, slider, instance, value, *args):
 		# print(self.sliders)
@@ -101,9 +142,9 @@ class toolFunctions():
 			y = (self.imgRoll.height - self.imgScroll.height)*(1.0-self.imgScroll.scroll_y) + self.imgScroll.height*(self.canvasYmax-touch.spos[1])/(self.canvasYmax-self.canvasYmin)
 			self.addPoint(x,y,touch.button == "left")
 		elif touch.button == "scrollup":
-			self.zoomDir("++")
+			self.zoomDir("++",(touch.spos[0]-self.canvasXmin)/(self.canvasXmax-self.canvasXmin),(self.canvasYmax-touch.spos[1])/(self.canvasYmax-self.canvasYmin))
 		elif touch.button == "scrolldown":
-			self.zoomDir("--")
+			self.zoomDir("--",(touch.spos[0]-self.canvasXmin)/(self.canvasXmax-self.canvasXmin),(self.canvasYmax-touch.spos[1])/(self.canvasYmax-self.canvasYmin))
 
 	def addPoint(self,x,y,is_positive,*args):
 		if not (x/self.zoomNow < self.imgWidth and y/self.zoomNow < self.imgHeight):
@@ -119,12 +160,13 @@ class toolFunctions():
 			if is_positive:
 				Color(0,1,0,self.sliders["overlay alpha"]["val"])
 			else:
-				Color(1,0,0,self.sliders["overlay alpha"]["val"])
+				Color(0,0,1,self.sliders["overlay alpha"]["val"])
 			print(self.imgGrid.height,self.imgGrid.width,"this is me")
 			cir = Ellipse()
 		self.clicks[-1].bind(pos=partial(self._image_bind,self.clicks[-1],cir),size=partial(self._image_bind,self.clicks[-1],cir))
-		self.add_click(int(round(x)),int(round(y)),is_positive) # function in myModel
+		# self.add_click(int(round(x/self.zoomNow)),int(round(y/self.zoomNow)),is_positive) # function in myModel
 
+		self.stages[self.stageNow][is_positive](round(x/self.zoomNow),round(y/self.zoomNow))
 
 
 

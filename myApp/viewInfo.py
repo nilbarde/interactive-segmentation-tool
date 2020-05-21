@@ -24,7 +24,7 @@ class viewInfo:
 		self.inputs[x] = {}
 		self.inputs[x]["pos"] = {"center_x":0.5,"center_y":0.9625}
 		self.inputs[x]["dim"] = (0.9,0.07)
-		self.inputs[x]["fun"] = self.doNothing
+		self.inputs[x]["fun"] = self.modelLoad
 		self.inputs[x]["val"] = self.weightsPath
 
 		x = "image folder path"
@@ -71,6 +71,25 @@ class viewInfo:
 		self.btns[x]["pos"] = {"center_x":0.90,"center_y":0.75}
 		self.btns[x]["dim"] = (0.11,0.08)
 		self.btns[x]["fun"] = self.imageReset
+
+		self.stages = {}
+		self.stagesGridPos = {"center_x":0.78,"center_y":0.55}
+		self.stagesGridDim = (0.36,0.35)
+		self.stageNow = 2
+
+		x = 1
+		self.stages[x] = {}
+		self.stages[x]["task"] = "add/remove nuclei"
+		self.stages[x]["fun"] = partial(self.stageSwitch,x)
+		self.stages[x][True] = partial(self.nucleiAdd)
+		self.stages[x][False] = partial(self.nucleiRemove)
+
+		x = 2
+		self.stages[x] = {}
+		self.stages[x]["task"] = "improve detected"
+		self.stages[x]["fun"] = partial(self.stageSwitch,x)
+		self.stages[x][True] = partial(self.nucleiPartAdd)
+		self.stages[x][False] = partial(self.nucleiPartRemove)
 
 		self.sliders = {}
 		self.sliderGridPos = {"center_x":0.78,"center_y":0.25}
