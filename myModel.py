@@ -10,6 +10,8 @@ from myApp.importer import *
 
 import cv2
 import numpy as np
+from os.path import dirname, basename, exists
+from os import makedirs
 from kivy.loader import Loader
 from functools import partial
 
@@ -37,6 +39,7 @@ class myModel():
 		self.clicker = clicker.Clicker()
 		self.probs_history = []
 		self.states = []
+		self.clicks = []
 
 	def nucleiFinish(self,*args):
 		self.object_count += 1
@@ -55,7 +58,7 @@ class myModel():
 		print("nucleiRemove")
 
 	def nucleiPartAdd(self,x,y,*args):
-		print("nucleiPartAdd")
+		print("nucleiPartAdd",x,y)
 		self.add_click(x,y,True)
 
 	def nucleiPartRemove(self,x,y,*args):
@@ -77,9 +80,12 @@ class myModel():
 			self.probs_history.append((self.probs_history[-1][0], pred))
 		else:
 			self.probs_history.append((np.zeros_like(pred), pred))
+		pred = self.probs_history[-1][1]>self.sliders["prediction threshold"]["val"]
+		self.all_results[pred] = (self.object_count+1)
 		self.image_saver()
 
 	def undo_click(self):
+		print(self.states)
 		if not self.states:
 			return
 
@@ -100,11 +106,7 @@ class myModel():
 				self.mask = Rectangle(size=self.imgGrid.size)
 			self.imgGrid.bind(pos=partial(self._image_bind,self.imgGrid,self.mask),size=partial(self._image_bind,self.imgGrid,self.mask))
 			return
-		print(len(self.probs_history),"length")
-		print(len(self.probs_history[-1]))
 		pred = self.probs_history[-1][1]
-		print((pred.shape),np.sum(pred),pred.dtype)
-		print("xoxo")
 
 		res = np.zeros((pred.shape[0],pred.shape[1],4),dtype="uint8")
 		res[:,:,2] = (pred > 0.5)*255
@@ -115,18 +117,32 @@ class myModel():
 
 		self.reloadMask(source)
 
+		name = self.images[self.imageNow]
+		source = dirname(name) + "/results/" + basename(name)
+		folder = dirname(source)
+		if not exists(folder):
+			makedirs(folder)
+		res = self.all_results
+		cv2.imwrite(source,res)
+
 	def reloadMask(self,source,*args):
 		# source = "res2.png"
 		Cache.remove('kv.image')
 		Cache.remove('kv.texture')
 		Cache.remove('kv.canvas')
 		Cache.remove('kv.Rectangle')
+
 		self.imgGrid.canvas.remove(self.mask)
 		with self.imgGrid.canvas:
 			Color(2.55,0,0,1)
 			self.mask = Rectangle(source=source,size=self.imgGrid.size)
 		self.imgGrid.bind(pos=partial(self._image_bind,self.imgGrid,self.mask),size=partial(self._image_bind,self.imgGrid,self.mask))
-		print("success",self.mask.texture.size)
+
+		self.sMaskGrid.canvas.remove(self.sMask)
+		with self.sMaskGrid.canvas:
+			Color(2.55,0,0,1)
+			self.sMask = Rectangle(source=source,size=self.sMaskGrid.size)
+		self.sMaskGrid.bind(pos=partial(self._image_bind,self.sMaskGrid,self.sMask),size=partial(self._image_bind,self.sMaskGrid,self.sMask))
 
 	def loadModel(self,path,device,norm_radius,*args):
 		print(path,device)

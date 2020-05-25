@@ -36,10 +36,18 @@ class toolFunctions():
 			self.imgGrid.height = self.imgHeight
 			Color(0,0,0,0)
 			self.mask = Rectangle()
+		self.imgGrid.bind(pos=partial(self._image_bind,self.imgGrid,self.img),size=partial(self._image_bind,self.imgGrid,self.img))
+
+		self.sMaskGrid = FloatLayout(size_hint=self.maskDim,pos_hint=self.maskPos)
+		self.add_widget(self.sMaskGrid)
+		with self.sMaskGrid.canvas:
+			Color(0,0,0,0)
+			self.sMask = Rectangle()
+		self.sMaskGrid.bind(pos=partial(self._image_bind,self.sMaskGrid,self.sMask),size=partial(self._image_bind,self.sMaskGrid,self.sMask))
+
 		self.zoomNow = 1
 		self.all_results = np.zeros((self.imgHeight, self.imgWidth),dtype="uint8")
 		self.object_count = 0
-		self.imgGrid.bind(pos=partial(self._image_bind,self.imgGrid,self.img),size=partial(self._image_bind,self.imgGrid,self.img))
 		self.reset_predictor()
 		# self.imgGrid.bind(pos=partial(self._image_bind,self.imgGrid,self.mask),size=partial(self._image_bind,self.imgGrid,self.mask))
 

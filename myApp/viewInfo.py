@@ -14,6 +14,9 @@ class viewInfo:
 		self.imgRatioWidth = 1.0
 		self.imgRatioHeight = 1.0
 
+		self.maskPos = {"center_x":0.15,"center_y":0.125} 
+		self.maskDim = (0.3,0.25)
+
 		self.imgHeight = 1000
 		self.imgWidth = 1750
 		self.setCanvasDim()
@@ -38,19 +41,19 @@ class viewInfo:
 
 		x = "+"
 		self.btns[x] = {}
-		self.btns[x]["pos"] = {"center_x":0.4,"center_y":0.15}
+		self.btns[x]["pos"] = {"center_x":0.55,"center_y":0.15}
 		self.btns[x]["dim"] = (0.09,0.08)
 		self.btns[x]["fun"] = partial(self.zoomDir,x)
 
 		x = "|"
 		self.btns[x] = {}
-		self.btns[x]["pos"] = {"center_x":0.3,"center_y":0.15}
+		self.btns[x]["pos"] = {"center_x":0.45,"center_y":0.15}
 		self.btns[x]["dim"] = (0.09,0.08)
 		self.btns[x]["fun"] = partial(self.zoomDir,x)
 
 		x = "-"
 		self.btns[x] = {}
-		self.btns[x]["pos"] = {"center_x":0.2,"center_y":0.15}
+		self.btns[x]["pos"] = {"center_x":0.35,"center_y":0.15}
 		self.btns[x]["dim"] = (0.09,0.08)
 		self.btns[x]["fun"] = partial(self.zoomDir,x)
 
