@@ -9,10 +9,10 @@ class viewInfo:
 		# center_y is center of widget in vertical direction
 		# dimension is along horizontal, vertical direction
 
-		self.imgPos = {"center_x":0.3,"center_y":0.5} 
+		self.imgPos = {"center_x":0.3,"center_y":0.55} 
 		self.imgDim = (0.6,0.6)
-		self.imgRatioWidth = 0.9
-		self.imgRatioHeight = 0.9
+		self.imgRatioWidth = 1.0
+		self.imgRatioHeight = 1.0
 
 		self.imgHeight = 1000
 		self.imgWidth = 1750
@@ -22,15 +22,15 @@ class viewInfo:
 
 		x = "model-weights path"
 		self.inputs[x] = {}
-		self.inputs[x]["pos"] = {"center_x":0.5,"center_y":0.9625}
-		self.inputs[x]["dim"] = (0.9,0.07)
+		self.inputs[x]["pos"] = {"center_x":0.5,"center_y":0.97}
+		self.inputs[x]["dim"] = (0.9,0.055)
 		self.inputs[x]["fun"] = self.modelLoad
 		self.inputs[x]["val"] = self.weightsPath
 
 		x = "image folder path"
 		self.inputs[x] = {}
-		self.inputs[x]["pos"] = {"center_x":0.5,"center_y":0.8775}
-		self.inputs[x]["dim"] = (0.9,0.07)
+		self.inputs[x]["pos"] = {"center_x":0.5,"center_y":0.91}
+		self.inputs[x]["dim"] = (0.9,0.055)
 		self.inputs[x]["fun"] = self.doNothing
 		self.inputs[x]["val"] = self.imageFolder
 
@@ -56,20 +56,20 @@ class viewInfo:
 
 		x = "next"
 		self.btns[x] = {}
-		self.btns[x]["pos"] = {"center_x":0.66,"center_y":0.75}
-		self.btns[x]["dim"] = (0.11,0.08)
+		self.btns[x]["pos"] = {"center_x":0.66,"center_y":0.80}
+		self.btns[x]["dim"] = (0.10,0.06)
 		self.btns[x]["fun"] = self.imageNext
 
 		x = "undo"
 		self.btns[x] = {}
-		self.btns[x]["pos"] = {"center_x":0.78,"center_y":0.75}
-		self.btns[x]["dim"] = (0.11,0.08)
+		self.btns[x]["pos"] = {"center_x":0.78,"center_y":0.80}
+		self.btns[x]["dim"] = (0.10,0.06)
 		self.btns[x]["fun"] = self.imageUndo
 
 		x = "reset"
 		self.btns[x] = {}
-		self.btns[x]["pos"] = {"center_x":0.90,"center_y":0.75}
-		self.btns[x]["dim"] = (0.11,0.08)
+		self.btns[x]["pos"] = {"center_x":0.90,"center_y":0.80}
+		self.btns[x]["dim"] = (0.10,0.06)
 		self.btns[x]["fun"] = self.imageReset
 
 		self.stages = {}

@@ -13,7 +13,7 @@ class viewScreen:
 
 		# inputs
 		for inputName in self.inputs:
-			grid = GridLayout(cols=2,size_hint=self.inputs[inputName]["dim"],pos_hint=self.inputs[inputName]["pos"],spacing=0,padding=0)
+			grid = GridLayout(cols=2,size_hint=self.inputs[inputName]["dim"],pos_hint=self.inputs[inputName]["pos"],spacing=5,padding=2)
 			self.add_widget(grid)
 
 			self.inputs[inputName]["input"] = TextInput(text=self.inputs[inputName]["val"] ,font_size=20, size_hint = (0.6,1.0))
@@ -34,9 +34,9 @@ class viewScreen:
 			grid.bind(minimum_height=grid.setter('height'))
 			self.sliderRoll.add_widget(grid)
 
-			self.sliders[slider]["btn"] = Button(text=slider + "(" + str(self.sliders[slider]["val"]) + ")" ,font_size=20, size_hint = (1.0,None), height=60)
+			self.sliders[slider]["btn"] = Button(text=slider + "(" + str(self.sliders[slider]["val"]) + ")" ,font_size=20, size_hint = (1.0,None), height=40)
 			grid.add_widget(self.sliders[slider]["btn"])
-			self.sliders[slider]["slider"] = Slider(min=self.sliders[slider]["min"], max=self.sliders[slider]["max"], value=self.sliders[slider]["val"], orientation='horizontal', step=self.sliders[slider]["step"], size_hint = (1.0,None), height=80)
+			self.sliders[slider]["slider"] = Slider(min=self.sliders[slider]["min"], max=self.sliders[slider]["max"], value=self.sliders[slider]["val"], orientation='horizontal', step=self.sliders[slider]["step"], size_hint = (1.0,None), height=40)
 			self.sliders[slider]["slider"].bind(value=partial(self.sliders[slider]["fun"]))
 			grid.add_widget(self.sliders[slider]["slider"])
 
@@ -48,10 +48,10 @@ class viewScreen:
 			grid.bind(minimum_height=grid.setter('height'))
 			self.stagesRoll.add_widget(grid)
 
-			self.stages[stage]["check"] = CheckBox(size_hint=(0.2,None), height=60,group="stages",active=self.stageNow==stage)
+			self.stages[stage]["check"] = CheckBox(size_hint=(0.2,None), height=40,group="stages",active=self.stageNow==stage)
 			self.stages[stage]["check"].bind(active=self.stages[stage]["fun"])
 			grid.add_widget(self.stages[stage]["check"])
-			self.stages[stage]["btn"] = Button(text=self.stages[stage]["task"],font_size=20, size_hint = (0.8,None), height=60, on_press=partial(self.stages[stage]["fun"],None,True))
+			self.stages[stage]["btn"] = Button(text=self.stages[stage]["task"],font_size=20, size_hint = (0.8,None), height=40, on_press=partial(self.stages[stage]["fun"],None,True))
 			grid.add_widget(self.stages[stage]["btn"])
 
 	def setImageScroll(self,*args):
@@ -67,9 +67,9 @@ class viewScreen:
 		self.imgScroll.add_widget(self.imgRoll)
 
 		self.imgScrollerY = Slider(min=0, max=1, value=1, orientation='vertical',   step=0.01, size_hint=(1 - self.imgRatioWidth, self.imgRatioHeight), pos_hint={"center_x":1 - (1 - self.imgRatioWidth)/2,"center_y":1-(self.imgRatioHeight/2)})
-		grid.add_widget(self.imgScrollerY)
+		# grid.add_widget(self.imgScrollerY)
 		self.imgScrollerX = Slider(min=0, max=1, value=0, orientation='horizontal', step=0.01, size_hint=(self.imgRatioWidth, 1 - self.imgRatioHeight), pos_hint={"center_x":self.imgRatioWidth/2,"center_y":(1 - self.imgRatioHeight)/2})
-		grid.add_widget(self.imgScrollerX)
+		# grid.add_widget(self.imgScrollerX)
 
 		self.imgScrollerY.bind(value=partial(self.sliderScrolled, self.imgScroll, "y"))
 		self.imgScrollerX.bind(value=partial(self.sliderScrolled, self.imgScroll, "x"))

@@ -37,11 +37,10 @@ class toolFunctions():
 			Color(0,0,0,0)
 			self.mask = Rectangle()
 		self.zoomNow = 1
-		self.clicks = []
-		self.probs_history = []
 		self.all_results = np.zeros((self.imgHeight, self.imgWidth),dtype="uint8")
 		self.object_count = 0
 		self.imgGrid.bind(pos=partial(self._image_bind,self.imgGrid,self.img),size=partial(self._image_bind,self.imgGrid,self.img))
+		self.reset_predictor()
 		# self.imgGrid.bind(pos=partial(self._image_bind,self.imgGrid,self.mask),size=partial(self._image_bind,self.imgGrid,self.mask))
 
 	def imageNext(self,*args):
@@ -71,37 +70,50 @@ class toolFunctions():
 			self.zoomNow *= (100+zoom)/100.0
 		elif mode == "-":
 			self.zoomNow /= (100+zoom)/100.0
+		elif mode == "|":
+			self.zoomNow = 1.0
 		elif mode == "++":
 			self.zoomNow *= (100+zoom/5)/100.0
 		elif mode == "--":
 			self.zoomNow /= (100+zoom/5)/100.0
 
-		point = (self.imgScroll.scroll_x*(self.imgRoll.width-self.imgScroll.width)+x*self.imgScroll.width)/(self.imgRoll.width)
-		print("------")
-		print(point)
 
 		newWidth = self.imgWidth*self.zoomNow
 		newHeight = self.imgHeight*self.zoomNow
-		if not x is None and newWidth>self.imgRoll.width:
-			shift_x = x*self.imgScroll.width
-			x = ((self.imgRoll.width-self.imgScroll.width)*self.imgScroll.scroll_x + shift_x)*1.0
-			x *= newWidth/self.imgGrid.width
-			x -= shift_x
-			x /= (newWidth-self.imgScroll.width)
+		print(type(x),newWidth,self.imgRoll.width)
+		if type(x) is float and newWidth>self.imgScroll.width:
+			point = (self.imgScroll.scroll_x*(self.imgRoll.width-self.imgScroll.width)+x*self.imgScroll.width)/(self.imgRoll.width)
+			# print("------")
+			# print("x boom in,",x,point)
+			point *= newWidth
+			point -= x*self.imgScroll.width
+			point /= (newWidth - self.imgScroll.width)
+			x = point
+			x = min(1.0,x)
+			x = max(0.0,x)
 			self.imgScroll.scroll_x = x
-		# if not y is None and newHeight>self.imgRoll.height:
-		# 	shift_y = y*self.imgScroll.height
-		# 	y = ((self.imgRoll.height-self.imgScroll.width)*(1-self.imgScroll.scroll_y) + shift_y)*1.0
-		# 	y *= newHeight/self.imgGrid.height
-		# 	y -= shift_y
-		# 	y /= (newWidth-self.imgScroll.width)
-		# 	self.imgScroll.scroll_y = 1 - y
+		if self.imgRoll.width < self.imgScroll.width:
+			self.imgScroll.scroll_x = 0.0
+		if type(y) is float and newHeight>self.imgScroll.height:
+			point = ((1-self.imgScroll.scroll_y)*(self.imgRoll.height-self.imgScroll.height)+y*self.imgScroll.height)/(self.imgRoll.height)
+			print("------")
+			print("y boom in,",point)
+			point *= newHeight
+			point -= y*self.imgScroll.height
+			point /= (newHeight - self.imgScroll.height)
+			y = 1 - point
+			y = min(1.0,y)
+			y = max(0.0,y)
+			self.imgScroll.scroll_y = y
+		if self.imgRoll.height < self.imgScroll.height:
+			self.imgScroll.scroll_y = 1.0
 		self.imgGrid.width = newWidth
 		self.imgGrid.height = newHeight
 
-		point = (self.imgScroll.scroll_x*(self.imgRoll.width-self.imgScroll.width)+x*self.imgScroll.width)/(self.imgRoll.width)
-		print(point)
-		print("------")
+		if type(y) is float:
+			point = ((1-self.imgScroll.scroll_y)*(self.imgRoll.height-self.imgScroll.height)+y*self.imgScroll.height)/(self.imgRoll.height)
+			print("y ou,",point)
+			print("------")
 
 	def stageSwitch(self,stage,instance=None,value=True,*args):
 		if value:
@@ -136,11 +148,17 @@ class toolFunctions():
 
 	def clickInCanvas(self,touch,*args):
 		if not (touch.spos[0] < self.canvasXmax and touch.spos[0] > self.canvasXmin and touch.spos[1] < self.canvasYmax and touch.spos[1] > self.canvasYmin):
+			print("early return")
 			return
 		if touch.button == "left" or touch.button == "right":
 			x = (self.imgRoll.width - self.imgScroll.width)*self.imgScroll.scroll_x + self.imgScroll.width*(touch.spos[0]-self.canvasXmin)/(self.canvasXmax-self.canvasXmin)
 			y = (self.imgRoll.height - self.imgScroll.height)*(1.0-self.imgScroll.scroll_y) + self.imgScroll.height*(self.canvasYmax-touch.spos[1])/(self.canvasYmax-self.canvasYmin)
-			self.addPoint(x,y,touch.button == "left")
+			x = (touch.spos[0]-self.canvasXmin)/(self.canvasXmax-self.canvasXmin)
+			point = (self.imgScroll.scroll_x*(self.imgRoll.width-self.imgScroll.width)+x*self.imgScroll.width)/(self.imgRoll.width)
+			print("point blah is ",point)
+			print("call",x,y)
+			print(self.imgRoll.width,self.imgScroll.width,self.imgScroll.scroll_x,touch.spos[0],self.canvasXmin,self.canvasXmax,self.canvasXmin)
+			# self.addPoint(x,y,touch.button == "left")
 		elif touch.button == "scrollup":
 			self.zoomDir("++",(touch.spos[0]-self.canvasXmin)/(self.canvasXmax-self.canvasXmin),(self.canvasYmax-touch.spos[1])/(self.canvasYmax-self.canvasYmin))
 		elif touch.button == "scrolldown":
@@ -148,8 +166,9 @@ class toolFunctions():
 
 	def addPoint(self,x,y,is_positive,*args):
 		if not (x/self.zoomNow < self.imgWidth and y/self.zoomNow < self.imgHeight):
-			print("outside")
+			print("outside",x,y,self.zoomNow)
 			return
+		print("point is ",x,y)
 		cen_x = x/self.imgGrid.width
 		cen_y = 1 - (y/self.imgGrid.height)
 		w = self.sliders["click radius"]["val"]
