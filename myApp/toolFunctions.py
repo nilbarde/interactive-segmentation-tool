@@ -13,6 +13,9 @@ class toolFunctions():
 
 		self.imageNow = image_num
 		name = self.images[image_num]
+		end_name = basename(name)
+		ext = end_name.split(".")[1]
+		self.result_name = dirname(name) + "/results/" + end_name[:-len(ext)] + "png"
 
 		input_transform = transforms.Compose([
 			transforms.ToTensor(),
@@ -44,14 +47,19 @@ class toolFunctions():
 			Color(0,0,0,0)
 			self.sMask = Rectangle()
 		self.sMaskGrid.bind(pos=partial(self._image_bind,self.sMaskGrid,self.sMask),size=partial(self._image_bind,self.sMaskGrid,self.sMask))
-
-		self.zoomNow = 1
-		self.all_results = np.zeros((self.imgHeight, self.imgWidth),dtype="uint8")
+		self.nucleiPoints = []
 		self.object_count = 0
 		self.reset_predictor()
+		self.reloadMask(self.result_name)
+		self.loadPreMask(self.result_name)
+
+		self.zoomNow = 1
+		self.all_results = np.zeros((self.imgHeight, self.imgWidth,4),dtype="uint8")
 		# self.imgGrid.bind(pos=partial(self._image_bind,self.imgGrid,self.mask),size=partial(self._image_bind,self.imgGrid,self.mask))
+		print(len(self.clicks),"count")
 
 	def imageNext(self,*args):
+		self.nucleiFinish()
 		self.imageLoad(self.imageNow+1)
 
 	def imagePrev(self,*args):
@@ -63,7 +71,8 @@ class toolFunctions():
 		self.image_saver()
 
 	def imageReset(self,*args):
-		self.imageLoad(self.imageNow)
+		# self.imageLoad(self.imageNow)
+		self.nucleiFinish()
 
 	def modelLoad(self,*args):
 		self.weightsPath = self.inputs["model-weights path"]["input"].text
@@ -181,9 +190,8 @@ class toolFunctions():
 			cir = Ellipse()
 		self.clicks[-1].bind(pos=partial(self._image_bind,self.clicks[-1],cir),size=partial(self._image_bind,self.clicks[-1],cir))
 		# self.add_click(int(round(x/self.zoomNow)),int(round(y/self.zoomNow)),is_positive) # function in myModel
-
 		self.stages[self.stageNow][is_positive](round(x/self.zoomNow),round(y/self.zoomNow))
-
+		print(len(self.clicks),"gfdsdfghj")
 
 
 

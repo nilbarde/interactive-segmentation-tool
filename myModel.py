@@ -10,7 +10,7 @@ from myApp.importer import *
 
 import cv2
 import numpy as np
-from os.path import dirname, basename, exists
+from os.path import dirname, basename, exists, isfile
 from os import makedirs
 from kivy.loader import Loader
 from functools import partial
@@ -42,17 +42,23 @@ class myModel():
 		self.clicks = []
 
 	def nucleiFinish(self,*args):
+		if not len(self.probs_history):
+			return
 		self.object_count += 1
-
+		print("total objects ",self.object_count)
 		pred = self.probs_history[-1][1]>self.sliders["prediction threshold"]["val"]
-		print(self.all_results.shape,pred.shape)
-		self.all_results[pred] = self.object_count
+		
+		# self.all_results = np.where(self.all_results==[self.object_count,self.object_count,self.object_count,128],0,self.all_results)
+		self.all_results[self.all_results[:,:,0]==self.object_count] = [0,0,0,0]
+
+		# self.all_results[self.all_results==[self.object_count,self.object_count,self.object_count,128]] = 0
+		self.all_results[pred] = [self.object_count,self.object_count,self.object_count,128]
 		self.reset_predictor()
 
 	def nucleiAdd(self,x,y,*args):
+		print("nucleiAdd")
 		self.nucleiFinish()
 		self.add_click(x,y,True)
-		print("nucleiAdd")
 
 	def nucleiRemove(self,x,y,*args):
 		print("nucleiRemove")
@@ -72,6 +78,7 @@ class myModel():
 			'predictor': self.predictor.get_states()
 		})
 
+		self.nucleiPoints.append([[x,y,is_positive]])
 		click = clicker.Click(is_positive=is_positive, coords=(y, x))
 		self.clicker.add_click(click)
 		pred = self.predictor.get_prediction(self.clicker)
@@ -81,11 +88,13 @@ class myModel():
 		else:
 			self.probs_history.append((np.zeros_like(pred), pred))
 		pred = self.probs_history[-1][1]>self.sliders["prediction threshold"]["val"]
-		self.all_results[pred] = (self.object_count+1)
+		# self.all_results[self.all_results==[self.object_count+1,self.object_count+1,self.object_count+1,128]] = 0
+		# x = np.where(self.all_results[:,:,0]==self.object_count+1,0,self.all_results[:,:,0])
+		self.all_results[self.all_results[:,:,0]==self.object_count+1] = [0,0,0,0]
+		self.all_results[pred] = [self.object_count+1,self.object_count+1,self.object_count+1,128]
 		self.image_saver()
 
 	def undo_click(self):
-		print(self.states)
 		if not self.states:
 			return
 
@@ -94,7 +103,7 @@ class myModel():
 		prev_state = self.states.pop()
 		self.clicker.set_state(prev_state['clicker'])
 		self.predictor.set_states(prev_state['predictor'])
-		print(len(self.probs_history),"length")
+		self.nucleiPoints.pop()
 		self.probs_history.pop()
 		self.image_saver()
 
@@ -115,15 +124,18 @@ class myModel():
 		source = "res.png"
 		cv2.imwrite(source,res)
 
-		self.reloadMask(source)
 
 		name = self.images[self.imageNow]
-		source = dirname(name) + "/results/" + basename(name)
+		end_name = basename(name)
+		ext = end_name.split(".")[1]
+		source = dirname(name) + "/results/" + end_name[:-len(ext)] + "png"
 		folder = dirname(source)
 		if not exists(folder):
 			makedirs(folder)
 		res = self.all_results
 		cv2.imwrite(source,res)
+
+		self.reloadMask(source)
 
 	def reloadMask(self,source,*args):
 		# source = "res2.png"
@@ -132,20 +144,76 @@ class myModel():
 		Cache.remove('kv.canvas')
 		Cache.remove('kv.Rectangle')
 
+		if not isfile(source):
+			img = np.zeros((self.imgHeight, self.imgWidth,4),dtype="uint8")
+			cv2.imwrite(source,img)
+
+		temp_fold = "./temp/"
+		if not exists(temp_fold):
+			makedirs(temp_fold)
+
+		mask = cv2.imread(source,-1)
+		mask[:,:,2] = (mask[:,:,2]>0)*255
+		mask[:,:,:2] = 0
+		dummy_source = temp_fold + "x.png"
+		cv2.imwrite(dummy_source,mask)
+
 		self.imgGrid.canvas.remove(self.mask)
 		with self.imgGrid.canvas:
-			Color(2.55,0,0,1)
-			self.mask = Rectangle(source=source,size=self.imgGrid.size)
+			Color(1,0,0,0.5) # self.sliders["overlay alpha"]["val"]
+			self.mask = Rectangle(source=dummy_source,size=self.imgGrid.size)
 		self.imgGrid.bind(pos=partial(self._image_bind,self.imgGrid,self.mask),size=partial(self._image_bind,self.imgGrid,self.mask))
 
 		self.sMaskGrid.canvas.remove(self.sMask)
 		with self.sMaskGrid.canvas:
 			Color(2.55,0,0,1)
-			self.sMask = Rectangle(source=source,size=self.sMaskGrid.size)
+			self.sMask = Rectangle(source=dummy_source,size=self.sMaskGrid.size)
 		self.sMaskGrid.bind(pos=partial(self._image_bind,self.sMaskGrid,self.sMask),size=partial(self._image_bind,self.sMaskGrid,self.sMask))
 
+
+	def loadPreMask(self,source,*args):
+		img = cv2.imread(source)
+
+		instances = np.max(img)
+		# img *= 50
+
+		for instance in range(1,instances+1):
+			lower = (np.array([instance,instance,instance]))
+			upper = (np.array([instance,instance,instance]))
+			mask = cv2.inRange(img,lower,upper)
+			cnts = cv2.findContours(mask, cv2.RETR_EXTERNAL,
+				cv2.CHAIN_APPROX_SIMPLE)
+			# cnts = imutils.grab_contours(cnts)
+			cnts = imutils.grab_contours(cnts)
+
+			for c in cnts:
+				# compute the center of the contour
+				M = cv2.moments(c)
+				if True:
+					cX = int(M["m10"] / M["m00"])
+					cY = int(M["m01"] / M["m00"])
+					# draw the contour and center of the shape on the img
+					is_positive = True
+					self.nucleiPoints.append([[cX,cY,is_positive]])
+					w = self.sliders["click radius"]["val"]
+					grid = FloatLayout(size_hint=(None,None),width=w,height=w,pos_hint={"center_x":cX*1.0/self.imgWidth,"center_y":1.0-(cY*1.0/self.imgHeight)})
+					self.imgGrid.add_widget(grid)
+					self.object_count += 1
+					self.clicks.append(grid)
+					with self.clicks[-1].canvas:
+						if is_positive:
+							Color(0,1,0,self.sliders["overlay alpha"]["val"])
+						else:
+							Color(0,0,1,self.sliders["overlay alpha"]["val"])
+						cir = Ellipse()
+					self.clicks[-1].bind(pos=partial(self._image_bind,self.clicks[-1],cir),size=partial(self._image_bind,self.clicks[-1],cir))
+					click = clicker.Click(is_positive=is_positive, coords=(cY, cX))
+					self.clicker.add_click(click)
+				else:
+					pass
+
+
 	def loadModel(self,path,device,norm_radius,*args):
-		print(path,device)
 		return utils.load_is_model(path, device, cpu_dist_maps=True, norm_radius=norm_radius)
 
 

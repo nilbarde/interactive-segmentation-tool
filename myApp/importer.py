@@ -37,6 +37,9 @@ if True:
 	from functools import partial
 	import cv2
 	import numpy as np
+	from os.path import dirname, basename, exists, isfile
+	from os import makedirs
+	import imutils
 else:
 	print("*******************************")
 	print("  error in importing packages  ")
