@@ -80,7 +80,6 @@ class myModel():
 			'predictor': self.predictor.get_states()
 		})
 
-		self.nucleiPoints.append([[x,y,is_positive]])
 		click = clicker.Click(is_positive=is_positive, coords=(y, x))
 		self.clicker.add_click(click)
 		pred = self.predictor.get_prediction(self.clicker)
@@ -107,7 +106,6 @@ class myModel():
 		prev_state = self.states.pop()
 		self.clicker.set_state(prev_state['clicker'])
 		self.predictor.set_states(prev_state['predictor'])
-		self.nucleiPoints.pop()
 		self.probs_history.pop()
 
 		pred = self.probs_history[-1][1]>self.sliders["prediction threshold"]["val"]
@@ -143,6 +141,7 @@ class myModel():
 		cv2.imwrite(source,res)
 
 		self.reloadMask(source)
+		self.loadCenters(self.all_results[:,:,:3])
 
 	def reloadMask(self,source,*args):
 		# source = "res2.png"
@@ -183,9 +182,10 @@ class myModel():
 
 	def loadPreMask(self,source,*args):
 		img = cv2.imread(source)
-
+		self.loadCenters(img)
 		instances = np.max(img)
 		# img *= 50
+		self.nucleiPoints = []
 
 		for instance in range(1,instances+1):
 			lower = (np.array([instance,instance,instance]))
@@ -204,7 +204,7 @@ class myModel():
 					cY = int(M["m01"] / M["m00"])
 					# draw the contour and center of the shape on the img
 					is_positive = True
-					self.nucleiPoints.append([[cX,cY,is_positive]])
+					self.nucleiPoints.append([cX,cY])
 					w = self.sliders["click radius"]["val"]
 					grid = FloatLayout(size_hint=(None,None),width=w,height=w,pos_hint={"center_x":cX*1.0/self.imgWidth,"center_y":1.0-(cY*1.0/self.imgHeight)})
 					self.imgGrid.add_widget(grid)
@@ -217,12 +217,32 @@ class myModel():
 							Color(0,0,1,self.sliders["overlay alpha"]["val"])
 						cir = Ellipse()
 					self.clicks[-1].bind(pos=partial(self._image_bind,self.clicks[-1],cir),size=partial(self._image_bind,self.clicks[-1],cir))
-					# click = clicker.Click(is_positive=is_positive, coords=(cY, cX))
-					# self.clicker.add_click(click)
-					# self.states.append({
-					# 	'clicker': self.clicker.get_state(),
-					# 	'predictor': self.predictor.get_states()
-					# })
+				except:
+					pass
+
+	def loadCenters(self,img,*args):
+		instances = np.max(img)
+		# img *= 50
+		self.nucleiPoints = []
+
+		for instance in range(1,instances+1):
+			lower = (np.array([instance,instance,instance]))
+			upper = (np.array([instance,instance,instance]))
+			mask = cv2.inRange(img,lower,upper)
+			cnts = cv2.findContours(mask, cv2.RETR_EXTERNAL,
+				cv2.CHAIN_APPROX_SIMPLE)
+			# cnts = imutils.grab_contours(cnts)
+			cnts = imutils.grab_contours(cnts)
+
+			for c in cnts:
+				# compute the center of the contour
+				M = cv2.moments(c)
+				try:
+					cX = int(M["m10"] / M["m00"])
+					cY = int(M["m01"] / M["m00"])
+					# draw the contour and center of the shape on the img
+					is_positive = True
+					self.nucleiPoints.append([cX,cY])
 				except:
 					pass
 
