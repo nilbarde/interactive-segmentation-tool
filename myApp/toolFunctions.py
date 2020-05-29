@@ -47,6 +47,7 @@ class toolFunctions():
 			Color(0,0,0,0)
 			self.sMask = Rectangle()
 		self.sMaskGrid.bind(pos=partial(self._image_bind,self.sMaskGrid,self.sMask),size=partial(self._image_bind,self.sMaskGrid,self.sMask))
+		self.all_results = np.zeros((self.imgHeight, self.imgWidth,4),dtype="uint8")
 		self.nucleiPoints = []
 		self.object_count = 0
 		self.reset_predictor()
@@ -54,7 +55,6 @@ class toolFunctions():
 		self.loadPreMask(self.result_name)
 
 		self.zoomNow = 1
-		self.all_results = np.zeros((self.imgHeight, self.imgWidth,4),dtype="uint8")
 		# self.imgGrid.bind(pos=partial(self._image_bind,self.imgGrid,self.mask),size=partial(self._image_bind,self.imgGrid,self.mask))
 		print(len(self.clicks),"count")
 

@@ -46,13 +46,13 @@ class myModel():
 			return
 		self.object_count += 1
 		print("total objects ",self.object_count)
-		pred = self.probs_history[-1][1]>self.sliders["prediction threshold"]["val"]
+		# pred = self.probs_history[-1][1]>self.sliders["prediction threshold"]["val"]
 		
-		# self.all_results = np.where(self.all_results==[self.object_count,self.object_count,self.object_count,128],0,self.all_results)
-		self.all_results[self.all_results[:,:,0]==self.object_count] = [0,0,0,0]
-
-		# self.all_results[self.all_results==[self.object_count,self.object_count,self.object_count,128]] = 0
-		self.all_results[pred] = [self.object_count,self.object_count,self.object_count,128]
+		# print("xxx ",np.sum(self.all_results))
+		# self.all_results[self.all_results[:,:,0]==self.object_count] = [0,0,0,0]
+		# print("xxx ",np.sum(self.all_results))
+		# self.all_results[pred] = [self.object_count,self.object_count,self.object_count,128]
+		# print("xxx ",np.sum(self.all_results))
 		self.reset_predictor()
 
 	def nucleiAdd(self,x,y,*args):
@@ -65,6 +65,8 @@ class myModel():
 
 	def nucleiPartAdd(self,x,y,*args):
 		print("nucleiPartAdd",x,y)
+		print(len(self.clicker))
+		print(np.sum(self.all_results))
 		self.add_click(x,y,True)
 
 	def nucleiPartRemove(self,x,y,*args):
@@ -88,14 +90,16 @@ class myModel():
 		else:
 			self.probs_history.append((np.zeros_like(pred), pred))
 		pred = self.probs_history[-1][1]>self.sliders["prediction threshold"]["val"]
-		# self.all_results[self.all_results==[self.object_count+1,self.object_count+1,self.object_count+1,128]] = 0
-		# x = np.where(self.all_results[:,:,0]==self.object_count+1,0,self.all_results[:,:,0])
+		print("xxx ",np.sum(self.all_results))
 		self.all_results[self.all_results[:,:,0]==self.object_count+1] = [0,0,0,0]
+		print("yyy ",np.sum(self.all_results))
 		self.all_results[pred] = [self.object_count+1,self.object_count+1,self.object_count+1,128]
+		print("zzz ",np.sum(self.all_results))
+		# return
 		self.image_saver()
 
 	def undo_click(self):
-		if not self.states:
+		if not self.states or not len(self.probs_history):
 			return
 
 		self.imgGrid.remove_widget(self.clicks[-1])
@@ -105,6 +109,11 @@ class myModel():
 		self.predictor.set_states(prev_state['predictor'])
 		self.nucleiPoints.pop()
 		self.probs_history.pop()
+
+		pred = self.probs_history[-1][1]>self.sliders["prediction threshold"]["val"]
+		self.all_results[self.all_results[:,:,0]==self.object_count+1] = [0,0,0,0]
+		self.all_results[pred] = [self.object_count+1,self.object_count+1,self.object_count+1,128]
+		
 		self.image_saver()
 
 	def image_saver(self,*args):
@@ -124,14 +133,12 @@ class myModel():
 		source = "res.png"
 		cv2.imwrite(source,res)
 
-
 		name = self.images[self.imageNow]
 		end_name = basename(name)
 		ext = end_name.split(".")[1]
 		source = dirname(name) + "/results/" + end_name[:-len(ext)] + "png"
-		folder = dirname(source)
-		if not exists(folder):
-			makedirs(folder)
+		ensure_dir(source)
+
 		res = self.all_results
 		cv2.imwrite(source,res)
 
@@ -144,19 +151,22 @@ class myModel():
 		Cache.remove('kv.canvas')
 		Cache.remove('kv.Rectangle')
 
+		ensure_dir(source)
 		if not isfile(source):
 			img = np.zeros((self.imgHeight, self.imgWidth,4),dtype="uint8")
 			cv2.imwrite(source,img)
 
-		temp_fold = "./temp/"
-		if not exists(temp_fold):
-			makedirs(temp_fold)
-
 		mask = cv2.imread(source,-1)
+		self.all_results = mask.copy()
+		print("lkjhgfghkallllllllllllllllllllllll")
+		print(np.sum(self.all_results))
 		mask[:,:,2] = (mask[:,:,2]>0)*255
 		mask[:,:,:2] = 0
+		temp_fold = "./temp/"
 		dummy_source = temp_fold + "x.png"
+		ensure_dir(dummy_source)
 		cv2.imwrite(dummy_source,mask)
+
 
 		self.imgGrid.canvas.remove(self.mask)
 		with self.imgGrid.canvas:
@@ -189,7 +199,7 @@ class myModel():
 			for c in cnts:
 				# compute the center of the contour
 				M = cv2.moments(c)
-				if True:
+				try:
 					cX = int(M["m10"] / M["m00"])
 					cY = int(M["m01"] / M["m00"])
 					# draw the contour and center of the shape on the img
@@ -207,9 +217,13 @@ class myModel():
 							Color(0,0,1,self.sliders["overlay alpha"]["val"])
 						cir = Ellipse()
 					self.clicks[-1].bind(pos=partial(self._image_bind,self.clicks[-1],cir),size=partial(self._image_bind,self.clicks[-1],cir))
-					click = clicker.Click(is_positive=is_positive, coords=(cY, cX))
-					self.clicker.add_click(click)
-				else:
+					# click = clicker.Click(is_positive=is_positive, coords=(cY, cX))
+					# self.clicker.add_click(click)
+					# self.states.append({
+					# 	'clicker': self.clicker.get_state(),
+					# 	'predictor': self.predictor.get_states()
+					# })
+				except:
 					pass
 
 
@@ -217,3 +231,8 @@ class myModel():
 		return utils.load_is_model(path, device, cpu_dist_maps=True, norm_radius=norm_radius)
 
 
+def ensure_dir(file_path):
+	if '/' in file_path:
+		directory = dirname(file_path)
+		if not exists(directory):
+			makedirs(directory)
