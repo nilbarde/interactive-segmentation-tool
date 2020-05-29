@@ -71,8 +71,8 @@ class toolFunctions():
 		self.image_saver()
 
 	def imageReset(self,*args):
-		# self.imageLoad(self.imageNow)
-		self.nucleiFinish()
+		self.imageLoad(self.imageNow)
+		# self.nucleiFinish()
 
 	def modelLoad(self,*args):
 		self.weightsPath = self.inputs["model-weights path"]["input"].text
