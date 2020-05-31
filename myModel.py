@@ -39,42 +39,8 @@ class myModel():
 		self.clicker = clicker.Clicker()
 		self.probs_history = []
 		self.states = []
-		self.clicks = []
-
-	def nucleiFinish(self,*args):
-		if not len(self.probs_history):
-			return
-		self.object_count += 1
-		print("total objects ",self.object_count)
-		# pred = self.probs_history[-1][1]>self.sliders["prediction threshold"]["val"]
-		
-		# print("xxx ",np.sum(self.all_results))
-		# self.all_results[self.all_results[:,:,0]==self.object_count] = [0,0,0,0]
-		# print("xxx ",np.sum(self.all_results))
-		# self.all_results[pred] = [self.object_count,self.object_count,self.object_count,128]
-		# print("xxx ",np.sum(self.all_results))
-		self.reset_predictor()
-
-	def nucleiAdd(self,x,y,*args):
-		print("nucleiAdd")
-		self.nucleiFinish()
-		self.add_click(x,y,True)
-
-	def nucleiRemove(self,x,y,*args):
-		print("nucleiRemove")
-
-	def nucleiPartAdd(self,x,y,*args):
-		print("nucleiPartAdd",x,y)
-		print(len(self.clicker))
-		print(np.sum(self.all_results))
-		self.add_click(x,y,True)
-
-	def nucleiPartRemove(self,x,y,*args):
-		print("nucleiPartRemove")
-		self.add_click(x,y,False)
 
 	def add_click(self, x, y, is_positive):
-		print(x,y,is_positive)
 		self.states.append({
 			'clicker': self.clicker.get_state(),
 			'predictor': self.predictor.get_states()
@@ -82,20 +48,23 @@ class myModel():
 
 		click = clicker.Click(is_positive=is_positive, coords=(y, x))
 		self.clicker.add_click(click)
+
+		print("predicting")
 		pred = self.predictor.get_prediction(self.clicker)
+
 		torch.cuda.empty_cache()
 		if self.probs_history:
 			self.probs_history.append((self.probs_history[-1][0], pred))
 		else:
 			self.probs_history.append((np.zeros_like(pred), pred))
+
 		pred = self.probs_history[-1][1]>self.sliders["prediction threshold"]["val"]
-		print("xxx ",np.sum(self.all_results))
-		self.all_results[self.all_results[:,:,0]==self.object_count+1] = [0,0,0,0]
-		print("yyy ",np.sum(self.all_results))
-		self.all_results[pred] = [self.object_count+1,self.object_count+1,self.object_count+1,128]
-		print("zzz ",np.sum(self.all_results))
-		# return
-		self.image_saver()
+		if self.isInstance:
+			xx = self.nowInstance
+		else:
+			xx = self.object_count
+		self.result_image[self.result_image[:,:,0]==xx] = [0,0,0]
+		self.result_image[pred] = [xx,xx,xx]
 
 	def undo_click(self):
 		if not self.states or not len(self.probs_history):
@@ -179,6 +148,92 @@ class myModel():
 			self.sMask = Rectangle(source=dummy_source,size=self.sMaskGrid.size)
 		self.sMaskGrid.bind(pos=partial(self._image_bind,self.sMaskGrid,self.sMask),size=partial(self._image_bind,self.sMaskGrid,self.sMask))
 
+	def nucleiFinish(self,*args):
+		if not len(self.probs_history):
+			return
+		self.reset_predictor()
+
+	def nucleiAdd(self,x,y,*args):
+		print("nucleiAdd")
+		self.nucleiFinish()
+		self.object_count += 1
+		self.add_click(x,y,True)
+		print("added click")
+		self.nucleiPoints[self.object_count] = {"center":[x, y],"points":[[x, y,True]]}
+		self.updateCenters()
+		self.saveResults()
+		self.loadMask(self.result_image[:,:,0])
+
+	def nucleiRemove(self,x,y,*args):
+		print("nucleiRemove")
+		if not len(self.nucleiPoints):
+			return
+
+		n = self.getInstance(x,y)
+
+		self.result_image[self.result_image[:,:,0]==n] = [0,0,0]
+		del self.nucleiPoints[n]
+
+		self.updateCenters()
+		self.saveResults()
+		self.loadMask(self.result_image[:,:,0])
+
+	def nucleiPartAdd(self,x,y,*args):
+		print("nucleiPartAdd",x,y)
+		print(self.nowInstance,self.isInstance)
+		if not self.isInstance:
+			self.nowInstance = self.getInstance(x,y)
+			if self.nowInstance == -1:
+				return
+			self.reset_predictor()
+			for point in self.nucleiPoints[self.nowInstance]["points"]:
+				x,y, is_positive = point
+				click = clicker.Click(is_positive=is_positive, coords=(y, x))
+				self.clicker.add_click(click)
+			self.isInstance = True
+			print(self.nowInstance,self.isInstance)
+			return 
+		else:
+			self.add_click(x,y,True)
+		self.updateCenters()
+		self.saveResults()
+		self.loadMask(self.result_image[:,:,0])
+
+	def nucleiPartRemove(self,x,y,*args):
+		print("nucleiPartRemove")
+		print(self.nowInstance,self.isInstance)
+		if not self.isInstance:
+			self.nowInstance = self.getInstance(x,y)
+			if self.nowInstance == -1:
+				return
+			self.reset_predictor()
+			for point in self.nucleiPoints[self.nowInstance]["points"]:
+				x,y, is_positive = point
+				click = clicker.Click(is_positive=is_positive, coords=(y, x))
+				self.clicker.add_click(click)
+			self.isInstance = True
+			print(self.nowInstance,self.isInstance)
+			return 
+		else:
+			self.add_click(x,y,False)
+		self.updateCenters()
+		self.saveResults()
+		self.loadMask(self.result_image[:,:,0])
+
+	def getInstance(self,x,y):
+		if not len(self.nucleiPoints):
+			return -1
+		n = 0
+		d = -1
+		for nuclei in self.nucleiPoints:
+			cx, cy = self.nucleiPoints[nuclei]["center"]
+			dis = (cx-x)**2 + (cy-y)**2
+
+			if d==-1 or d>dis:
+				d = dis
+				n = nuclei
+		return n
+
 
 	def loadPreMask(self,source,*args):
 		img = cv2.imread(source)
@@ -217,32 +272,6 @@ class myModel():
 							Color(0,0,1,self.sliders["overlay alpha"]["val"])
 						cir = Ellipse()
 					self.clicks[-1].bind(pos=partial(self._image_bind,self.clicks[-1],cir),size=partial(self._image_bind,self.clicks[-1],cir))
-				except:
-					pass
-
-	def loadCenters(self,img,*args):
-		instances = np.max(img)
-		# img *= 50
-		self.nucleiPoints = []
-
-		for instance in range(1,instances+1):
-			lower = (np.array([instance,instance,instance]))
-			upper = (np.array([instance,instance,instance]))
-			mask = cv2.inRange(img,lower,upper)
-			cnts = cv2.findContours(mask, cv2.RETR_EXTERNAL,
-				cv2.CHAIN_APPROX_SIMPLE)
-			# cnts = imutils.grab_contours(cnts)
-			cnts = imutils.grab_contours(cnts)
-
-			for c in cnts:
-				# compute the center of the contour
-				M = cv2.moments(c)
-				try:
-					cX = int(M["m10"] / M["m00"])
-					cY = int(M["m01"] / M["m00"])
-					# draw the contour and center of the shape on the img
-					is_positive = True
-					self.nucleiPoints.append([cX,cY])
 				except:
 					pass
 

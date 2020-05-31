@@ -11,15 +11,30 @@ class viewInfo:
 
 		self.imgPos = {"center_x":0.3,"center_y":0.55} 
 		self.imgDim = (0.6,0.6)
-		self.imgRatioWidth = 1.0
-		self.imgRatioHeight = 1.0
-
-		self.maskPos = {"center_x":0.15,"center_y":0.125} 
-		self.maskDim = (0.3,0.25)
 
 		self.imgHeight = 1000
 		self.imgWidth = 1750
 		self.setCanvasDim()
+
+		self.maskPos = {"center_x":0.15,"center_y":0.125} 
+		self.maskDim = (0.3,0.25)
+
+		self.images = {}
+
+		x = "seg"
+		self.images[x] = {}
+		self.images[x]["pos"] = {"center_x":0.1,"center_y":0.125}
+		self.images[x]["dim"] = (0.195,0.245)
+
+		x = "img"
+		self.images[x] = {}
+		self.images[x]["pos"] = {"center_x":0.3,"center_y":0.125}
+		self.images[x]["dim"] = (0.195,0.245)
+
+		x = "clk"
+		self.images[x] = {}
+		self.images[x]["pos"] = {"center_x":0.5,"center_y":0.125}
+		self.images[x]["dim"] = (0.195,0.245)
 
 		self.inputs = {}
 
@@ -39,23 +54,23 @@ class viewInfo:
 
 		self.btns = {}
 
-		x = "+"
-		self.btns[x] = {}
-		self.btns[x]["pos"] = {"center_x":0.55,"center_y":0.15}
-		self.btns[x]["dim"] = (0.09,0.08)
-		self.btns[x]["fun"] = partial(self.zoomDir,x)
+		# x = "+"
+		# self.btns[x] = {}
+		# self.btns[x]["pos"] = {"center_x":0.55,"center_y":0.15}
+		# self.btns[x]["dim"] = (0.09,0.08)
+		# self.btns[x]["fun"] = partial(self.zoomDir,x)
 
-		x = "|"
-		self.btns[x] = {}
-		self.btns[x]["pos"] = {"center_x":0.45,"center_y":0.15}
-		self.btns[x]["dim"] = (0.09,0.08)
-		self.btns[x]["fun"] = partial(self.zoomDir,x)
+		# x = "|"
+		# self.btns[x] = {}
+		# self.btns[x]["pos"] = {"center_x":0.45,"center_y":0.15}
+		# self.btns[x]["dim"] = (0.09,0.08)
+		# self.btns[x]["fun"] = partial(self.zoomDir,x)
 
-		x = "-"
-		self.btns[x] = {}
-		self.btns[x]["pos"] = {"center_x":0.35,"center_y":0.15}
-		self.btns[x]["dim"] = (0.09,0.08)
-		self.btns[x]["fun"] = partial(self.zoomDir,x)
+		# x = "-"
+		# self.btns[x] = {}
+		# self.btns[x]["pos"] = {"center_x":0.35,"center_y":0.15}
+		# self.btns[x]["dim"] = (0.09,0.08)
+		# self.btns[x]["fun"] = partial(self.zoomDir,x)
 
 		x = "next"
 		self.btns[x] = {}
@@ -132,8 +147,8 @@ class viewInfo:
 
 	def setCanvasDim(self):
 		self.canvasXmin = self.imgPos["center_x"] - self.imgDim[0]/2
-		self.canvasXmax = self.canvasXmin + self.imgDim[0]*self.imgRatioWidth
+		self.canvasXmax = self.canvasXmin + self.imgDim[0]
 
 		self.canvasYmax = self.imgPos["center_y"] + self.imgDim[1]/2
-		self.canvasYmin = self.canvasYmax - self.imgDim[1]*self.imgRatioHeight
+		self.canvasYmin = self.canvasYmax - self.imgDim[1]
 		print(self.canvasXmin,self.canvasXmax,self.canvasYmin,self.canvasYmax)

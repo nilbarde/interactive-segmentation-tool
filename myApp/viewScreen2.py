@@ -11,14 +11,6 @@ class viewScreen:
 		# inserting image field
 		self.setImageScroll()
 
-		for img in self.images:
-			self.images[img]["grid"] = FloatLayout(size_hint=self.images[img]["dim"],pos_hint=self.images[img]["pos"])
-			self.add_widget(self.images[img]["grid"])
-			# with self.images[img]["grid"].canvas:
-			# 	Color(0,0,0,0)
-			# 	self.images[img]["rect"] = Rectangle()
-			# self.images[img]["grid"].bind(pos=partial(self._image_bind,self.images[img]["grid"],self.images[img]["rect"]),size=partial(self._image_bind,self.images[img]["grid"],self.images[img]["rect"]))
-
 		# inputs
 		for inputName in self.inputs:
 			grid = GridLayout(cols=2,size_hint=self.inputs[inputName]["dim"],pos_hint=self.inputs[inputName]["pos"],spacing=5,padding=2)
@@ -64,17 +56,13 @@ class viewScreen:
 		grid = FloatLayout(size_hint=self.imgDim, pos_hint=self.imgPos)
 		self.add_widget(grid)
 
-		self.imgScroll = ScrollView(size_hint=(1,1),pos_hint={"center_x":0.5,"center_y":0.5}, size=(grid.width, grid.height),do_scroll_y=False)
+		self.imgScroll = ScrollView(size_hint=(self.imgRatioWidth,self.imgRatioHeight),pos_hint={"center_x":self.imgRatioWidth/2,"center_y":1-(self.imgRatioHeight/2)}, size=(grid.width, grid.height),do_scroll_y=False)
 		grid.add_widget(self.imgScroll)
 
 		self.imgRoll = GridLayout(cols=1, size_hint_y=None, size_hint_x=None, spacing=2, padding=2)
 		self.imgRoll.bind(minimum_height=self.imgRoll.setter('height'))
 		self.imgRoll.bind(minimum_width=self.imgRoll.setter('width'))
 		self.imgScroll.add_widget(self.imgRoll)
-
-		self.imgRoll.clear_widgets()
-		self.imgGrid = FloatLayout(size_hint=(None,None),width=self.imgWidth,height=self.imgHeight)
-		self.imgRoll.add_widget(self.imgGrid)
 
 	def _image_bind(self,grid,thumb,*args):
 		thumb.pos = grid.pos
